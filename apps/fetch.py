@@ -18,6 +18,10 @@ def get_args():
     parser.add_argument('-a', '--token', help='Factory API Token, aka OSF Token')
     parser.add_argument('-d', '--preload-dir', help='Directory to fetch/preload/output apps and images')
     parser.add_argument('-o', '--out-images-root-dir', help='Directory to output archived images')
+    parser.add_argument('-g', '--graphdriver', help='A docker daemon graph driver to use for dumping container images',
+                        default='overlay2')
+    parser.add_argument('-s', '--app-shortlist', help='A coma separated list of Target Apps to fetch, if not specified'
+                                                      ' all Apps are fetched', default=None)
 
     args = parser.parse_args()
     return args
@@ -32,8 +36,8 @@ if __name__ == '__main__':
             targets = json.load(f)
 
         apps_fetcher = TargetAppsFetcher(args.token, args.preload_dir)
-        apps_fetcher.fetch_apps(targets)
-        apps_fetcher.fetch_apps_images()
+        apps_fetcher.fetch_apps(targets, args.app_shortlist)
+        apps_fetcher.fetch_apps_images(graphdriver=args.graphdriver)
 
         store = ArchiveTargetAppsStore(args.out_images_root_dir)
         for target, _ in apps_fetcher.target_apps.items():

@@ -5,7 +5,7 @@ set -euo pipefail
 
 # examples
 # sudo is required for apps/containers images dumping
-# sudo ./tests/test_apps_publishing.sh $FACTORY $OSF_TOKEN $FIO_USER_ID $FIO_CREDS $FACTORY_DIR/containers.git master
+# sudo ./tests/test_apps_publishing.sh $FACTORY $OSF_TOKEN $FIO_USER_ID $FACTORY_CREDS $FACTORY_DIR/containers.git master
 
 REQ_ARG_NUMB=5
 if [[ $# -lt ${REQ_ARG_NUMB} ]]; then

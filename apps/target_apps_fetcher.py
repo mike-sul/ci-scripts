@@ -37,10 +37,10 @@ class TargetAppsFetcher:
     def fetch_target_apps(self, target: FactoryClient.Target, apps_shortlist=None):
         self.target_apps[target] = self.__fetch_apps(target.name, apps_shortlist, target)
 
-    def fetch_apps(self, targets: dict):
+    def fetch_apps(self, targets: dict, apps_shortlist=None):
         for target_name, target_json in targets.items():
             target = FactoryClient.Target(target_name, target_json)
-            self.target_apps[target] = self.__fetch_apps(target_name, target=target)
+            self.target_apps[target] = self.__fetch_apps(target_name, apps_shortlist, target)
 
     def fetch_apps_images(self, graphdriver='overlay2'):
         self._registry_client.login()
