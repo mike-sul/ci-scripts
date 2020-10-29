@@ -25,8 +25,8 @@ class FactoryClient:
             return self['custom']['containers-sha']
 
         @property
-        def sha(self):
-            return self['custom']['containers-sha']
+        def hwid(self):
+            return self['custom']['hardwareIds'][0]
 
         @property
         def shortlist(self):

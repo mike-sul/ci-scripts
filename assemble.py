@@ -121,6 +121,22 @@ def get_args():
     parser.add_argument('-a', '--app-image-dir', help='A path to directory that contains app container images')
     parser.add_argument('-o', '--out-image-dir', help='A path to directory to put a resultant image to')
     parser.add_argument('-d', '--preload-dir', help='Directory to fetch/preload/output apps and images')
+    parser.add_argument('-p', '--permutations', help='''JSON file of image permutations formatted as:
+        {
+            "permutations": [
+                {
+                    "base-name": "lmp-factory-image-intel-foo",
+                    "platform": "intel-corei7-64",
+                    "apps": ["foo"]
+                },
+                {
+                    "base-name": "lmp-factory-image-intel-foo-bar",
+                    "platform": "intel-corei7-64",
+                    "apps": ["foo", "bar"]
+                }
+            ]
+        }
+    ''')
 
     parser.add_argument('-T', '--targets', help='A coma separated list of Targets to assemble system image for')
 
@@ -143,6 +159,23 @@ def get_args():
             parser.print_help()
             exit(1)
         args.app_shortlist = args.app_shortlist.split(',')
+    elif args.permutations:
+        with open(args.permutations) as f:
+            args.permutations = json.load(f)['permutations']
+
+    logger.warn("ANDY hacking args.permutations for test")
+    args.permutations = [
+        {
+            "base-name": "foo",
+            "platform": "intel-corei7-64",
+            "apps": ["shellhttpd", "homelab"],
+        },
+        {
+            "base-name": "bar",
+            "platform": "intel-corei7-64",
+            "apps": ["fiotest"],
+        },
+    ]
 
     return args
 
@@ -169,13 +202,32 @@ if __name__ == '__main__':
             logger.warning(err_msg)
             exit(1)
 
+        work = []
+        if args.permutations:
+            for item in args.permutations:
+                for t in targets:
+                    if t.hwid == item['platform']:
+                        out = os.path.join(args.out_image_dir, item['base-name'])
+                        os.mkdir(out)
+                        work.append((out, t, item['apps']))
+                        break
+                else:
+                    logger.error('Unable to find Target for %s', item)
+                    exit(1)
+        else:
+            for t in targets:
+                apps = args.app_shortlist
+                if not apps:
+                    apps = [x[0] for x in t.apps()]
+                work.append((args.out_image_dir, t, apps))
+
         logger.info('Found {} Targets to assemble image for'.format(found_targets_number))
-        for target in targets:
-            logger.info('Assembling image for {}, shortlist: {}'.format(target.name, args.app_shortlist))
-            image_file_path = factory_client.get_target_system_image(target, args.out_image_dir)
+        for outdir, target, apps in work:
+            logger.info('Assembling image for {}, shortlist: {}'.format(target.name, apps))
+            image_file_path = factory_client.get_target_system_image(target, outdir)
             copy_container_images_to_wic(target, args.app_image_dir, args.preload_dir,
-                                         image_file_path, args.token, args.app_shortlist)
-            archive_and_output_assembled_wic(image_file_path, args.out_image_dir)
+                                         image_file_path, args.token, apps)
+            archive_and_output_assembled_wic(image_file_path, outdir)
     except Exception as exc:
         logger.error('Failed to assemble a system image: {}'.format(exc))
         exit_code = 1
