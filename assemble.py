@@ -163,7 +163,7 @@ def get_args():
         with open(args.permutations) as f:
             args.permutations = json.load(f)['permutations']
 
-    logger.warn("ANDY hacking args.permutations for test")
+    logger.warning("ANDY hacking args.permutations for test")
     args.permutations = [
         {
             "base-name": "foo",
@@ -208,8 +208,9 @@ if __name__ == '__main__':
                 for t in targets:
                     if t.hwid == item['platform']:
                         out = os.path.join(args.out_image_dir, item['base-name'])
+                        preload_dir = os.path.join(args.preload_dir, item['base-name'])
                         os.mkdir(out)
-                        work.append((out, t, item['apps']))
+                        work.append((preload_dir, out, t, item['apps']))
                         break
                 else:
                     logger.error('Unable to find Target for %s', item)
@@ -219,13 +220,13 @@ if __name__ == '__main__':
                 apps = args.app_shortlist
                 if not apps:
                     apps = [x[0] for x in t.apps()]
-                work.append((args.out_image_dir, t, apps))
+                work.append((args.preload_dir, args.out_image_dir, t, apps))
 
         logger.info('Found {} Targets to assemble image for'.format(found_targets_number))
-        for outdir, target, apps in work:
+        for preload_dir, outdir, target, apps in work:
             logger.info('Assembling image for {}, shortlist: {}'.format(target.name, apps))
             image_file_path = factory_client.get_target_system_image(target, outdir)
-            copy_container_images_to_wic(target, args.app_image_dir, args.preload_dir,
+            copy_container_images_to_wic(target, args.app_image_dir, preload_dir,
                                          image_file_path, args.token, apps)
             archive_and_output_assembled_wic(image_file_path, outdir)
     except Exception as exc:
